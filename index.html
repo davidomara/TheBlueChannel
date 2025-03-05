@@ -4,22 +4,73 @@
   <meta charset="UTF-8">
   <title>MiniSheenasNest Chat</title>
   <style>
-    /* Main chat container */
+    /* Global resets */
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    /* Modal overlay for login */
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      width: 300px;
+    }
+    .modal-content input[type="text"] {
+      width: 90%;
+      padding: 10px;
+      font-size: 1rem;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .modal-content button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      background-color: #09d261;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .modal-content button:hover {
+      background-color: #07b457;
+    }
+    .modal-content p {
+      color: red;
+      display: none;
+      margin: 0;
+      font-size: 0.9rem;
+    }
+    
+    /* Chat container styles */
     .chat-container {
       width: 60%;
       max-width: 800px;
       margin: 20px auto;
       border: 1px solid #ccc;
       border-radius: 8px;
-      font-family: Arial, sans-serif;
       height: 80vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
       background-color: #e5ddd5;
+      display: none; /* Hidden until login is valid */
     }
-
-    /* Header showing both users */
+    /* Header with both users' info */
     .chat-header {
       background-color: #075E54;
       color: #fff;
@@ -44,8 +95,7 @@
       margin: 0;
       font-size: 1.2rem;
     }
-
-    /* Chat messages area */
+    /* Messages area */
     .chat-messages {
       flex: 1;
       padding: 10px;
@@ -83,29 +133,19 @@
       margin-top: 4px;
       text-align: right;
     }
-    .edit-link {
-      font-size: 0.75rem;
-      margin-left: 10px;
-      color: blue;
-      cursor: pointer;
-    }
-
-    /* Input area at bottom */
+    /* Input area */
     .chat-input-area {
       background: #f0f0f0;
       padding: 10px;
       border-top: 1px solid #ccc;
     }
-    /* Make the form a flex container */
     .chat-form {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin: 0;
       width: 100%;
       box-sizing: border-box;
     }
-    /* Let the textarea fill the horizontal space */
     .chat-form textarea {
       flex: 1;
       min-height: 40px;
@@ -114,7 +154,7 @@
       border-radius: 4px;
       padding: 8px;
       font-size: 0.95rem;
-      min-width: 0; /* important for flex items in some cases */
+      min-width: 0;
     }
     .chat-form button {
       width: 80px;
@@ -138,9 +178,19 @@
 </head>
 <body>
 
-<div class="chat-container">
-  
-  <!-- Header: display current user and other user with their images -->
+<!-- Login Modal -->
+<div id="login-modal" class="modal">
+  <div class="modal-content">
+    <h2>What's your name?</h2>
+    <input type="text" id="user-name-input" placeholder="Enter Sheena or Nord">
+    <br>
+    <button id="login-button">Login</button>
+    <p id="login-error">Invalid name. Only "Sheena" or "Nord" allowed.</p>
+  </div>
+</div>
+
+<!-- Chat Container -->
+<div id="chat-container" class="chat-container">
   <div class="chat-header">
     <div class="user-info" id="current-user-info">
       <img id="current-user-img" src="" alt="">
@@ -151,98 +201,89 @@
       <h2 id="other-user-name"></h2>
     </div>
   </div>
-  
-  <!-- Messages area -->
   <div class="chat-messages" id="chat-messages">
     <ul class="chat-list" id="chat-list">
-      <!-- Chat bubbles rendered here by JavaScript -->
+      <!-- Chat messages will be rendered here -->
     </ul>
   </div>
-  
-  <!-- Input area -->
   <div class="chat-input-area">
     <form id="chat-form" class="chat-form">
       <textarea id="content" placeholder="Type your message..."></textarea>
       <button type="submit">Send</button>
     </form>
   </div>
-  
 </div>
 
 <script>
-  // --- Configuration & Data Model ---
+  // Define allowed users
   const users = {
-    Sheena: {
-      name: "Sheena",
-      img: "images/sheena.jpg"
-    },
-    Nord: {
-      name: "Nord",
-      img: "images/nord.jpg"
-    }
+    Sheena: { name: "Sheena", img: "images/sheena.jpg" },
+    Nord: { name: "Nord", img: "images/nord.jpg" }
   };
 
-  // Decide which user is "current" and which is "other"
-  let currentUser = users.Sheena; 
-  let otherUser = users.Nord;
-  // Switch to simulate Nord as the current user:
-  // currentUser = users.Nord; otherUser = users.Sheena;
-
-  // In-memory messages array
-  // Each message: { id, sender, receiver, content, sentAt, isRead }
+  let currentUser, otherUser;
   let messages = [];
 
-  // --- Initialize the header info ---
-  document.getElementById("current-user-img").src = currentUser.img;
-  document.getElementById("current-user-img").alt = currentUser.name;
-  document.getElementById("current-user-name").innerText = currentUser.name;
+  // Login handling
+  document.getElementById("login-button").addEventListener("click", function() {
+    const inputName = document.getElementById("user-name-input").value.trim().toLowerCase();
+    const errorEl = document.getElementById("login-error");
+    errorEl.style.display = "none";
+    
+    if (inputName === "sheena") {
+      currentUser = users.Sheena;
+      otherUser = users.Nord;
+      initChat();
+    } else if (inputName === "nord") {
+      currentUser = users.Nord;
+      otherUser = users.Sheena;
+      initChat();
+    } else {
+      errorEl.style.display = "block";
+    }
+  });
 
-  document.getElementById("other-user-img").src = otherUser.img;
-  document.getElementById("other-user-img").alt = otherUser.name;
-  document.getElementById("other-user-name").innerText = otherUser.name;
+  // Initialize chat UI after successful login
+  function initChat() {
+    // Set header images and names
+    document.getElementById("current-user-img").src = currentUser.img;
+    document.getElementById("current-user-img").alt = currentUser.name;
+    document.getElementById("current-user-name").innerText = currentUser.name;
+    document.getElementById("other-user-img").src = otherUser.img;
+    document.getElementById("other-user-img").alt = otherUser.name;
+    document.getElementById("other-user-name").innerText = otherUser.name;
+    
+    // Hide login modal, show chat container
+    document.getElementById("login-modal").style.display = "none";
+    document.getElementById("chat-container").style.display = "flex";
+    renderMessages();
+  }
 
-  // --- Render messages ---
+  // Render messages
   function renderMessages() {
     const chatList = document.getElementById("chat-list");
-    chatList.innerHTML = ""; // Clear previous content
-
+    chatList.innerHTML = "";
     messages.forEach(msg => {
       const li = document.createElement("li");
       li.classList.add("chat-bubble");
       li.classList.add(msg.sender === currentUser.name ? "outgoing" : "incoming");
-
-      li.innerHTML = `
-        <span>${msg.content}</span>
-        <div class="bubble-footer">
-          ${new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          ${msg.isRead ? "✔✔" : "✔"}
-        </div>
-      `;
-
-      // If message belongs to currentUser and is not read, show Edit
-      if (msg.sender === currentUser.name && !msg.isRead) {
-        const editLink = document.createElement("span");
-        editLink.innerText = " Edit";
-        editLink.classList.add("edit-link");
-        editLink.onclick = () => editMessage(msg.id);
-        li.querySelector(".bubble-footer").appendChild(editLink);
-      }
-
+      li.innerHTML = `<span>${msg.content}</span>
+                      <div class="bubble-footer">
+                        ${new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        ${msg.isRead ? "✔✔" : "✔"}
+                      </div>`;
       chatList.appendChild(li);
     });
-
-    // Auto scroll to bottom
     const chatMessages = document.getElementById("chat-messages");
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
-  // --- Send message ---
+  // Send message
   document.getElementById("chat-form").addEventListener("submit", function(e) {
     e.preventDefault();
     const contentEl = document.getElementById("content");
     const text = contentEl.value.trim();
-    if (!text) return;
-
+    if (text === "") return;
     const newMsg = {
       id: Date.now(),
       sender: currentUser.name,
@@ -256,31 +297,8 @@
     renderMessages();
   });
 
-  // --- Edit message ---
-  function editMessage(messageId) {
-    const msg = messages.find(m => m.id === messageId);
-    if (!msg) return;
-    const newContent = prompt("Edit your message:", msg.content);
-    if (newContent !== null && newContent.trim() !== "") {
-      msg.content = newContent.trim();
-      msg.updatedAt = new Date();
-      renderMessages();
-    }
-  }
+  // (Optional) Typing indicator code can be added here
 
-  // --- Simulate marking messages as read ---
-  // When the chat area is clicked, mark all messages received by currentUser as read.
-  document.getElementById("chat-messages").addEventListener("click", () => {
-    messages.forEach(msg => {
-      if (msg.receiver === currentUser.name) {
-        msg.isRead = true;
-      }
-    });
-    renderMessages();
-  });
-
-  // Initial render
-  renderMessages();
 </script>
 
 </body>
