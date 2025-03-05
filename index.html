@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mini Sheenas Nest Chat</title>
+  <title>MiniSheenasNest Chat</title>
   <style>
     /* Main chat container */
     .chat-container {
@@ -96,12 +96,16 @@
       padding: 10px;
       border-top: 1px solid #ccc;
     }
+    /* Make the form a flex container */
     .chat-form {
       display: flex;
       align-items: center;
       gap: 10px;
       margin: 0;
+      width: 100%;
+      box-sizing: border-box;
     }
+    /* Let the textarea fill the horizontal space */
     .chat-form textarea {
       flex: 1;
       min-height: 40px;
@@ -110,6 +114,7 @@
       border-radius: 4px;
       padding: 8px;
       font-size: 0.95rem;
+      min-width: 0; /* important for flex items in some cases */
     }
     .chat-form button {
       width: 80px;
@@ -150,13 +155,13 @@
   <!-- Messages area -->
   <div class="chat-messages" id="chat-messages">
     <ul class="chat-list" id="chat-list">
-      <!-- Chat bubbles will be rendered here -->
+      <!-- Chat bubbles rendered here by JavaScript -->
     </ul>
   </div>
   
   <!-- Input area -->
   <div class="chat-input-area">
-    <form id="chat-form">
+    <form id="chat-form" class="chat-form">
       <textarea id="content" placeholder="Type your message..."></textarea>
       <button type="submit">Send</button>
     </form>
@@ -166,8 +171,6 @@
 
 <script>
   // --- Configuration & Data Model ---
-  // For demonstration, we use two hard-coded users.
-  // In a real app, you might have a login screen.
   const users = {
     Sheena: {
       name: "Sheena",
@@ -179,41 +182,44 @@
     }
   };
 
-  // Set the "currentUser" and "otherUser".
-  // You can change this to simulate different logins.
+  // Decide which user is "current" and which is "other"
   let currentUser = users.Sheena; 
   let otherUser = users.Nord;
-  // To simulate Nord logged in, switch:
+  // Switch to simulate Nord as the current user:
   // currentUser = users.Nord; otherUser = users.Sheena;
 
   // In-memory messages array
   // Each message: { id, sender, receiver, content, sentAt, isRead }
   let messages = [];
 
-  // --- Initialization: Setup header info ---
+  // --- Initialize the header info ---
   document.getElementById("current-user-img").src = currentUser.img;
   document.getElementById("current-user-img").alt = currentUser.name;
   document.getElementById("current-user-name").innerText = currentUser.name;
+
   document.getElementById("other-user-img").src = otherUser.img;
   document.getElementById("other-user-img").alt = otherUser.name;
   document.getElementById("other-user-name").innerText = otherUser.name;
 
-  // --- Utility: Render messages ---
+  // --- Render messages ---
   function renderMessages() {
     const chatList = document.getElementById("chat-list");
-    chatList.innerHTML = ""; // clear previous content
+    chatList.innerHTML = ""; // Clear previous content
+
     messages.forEach(msg => {
-      // Create list item for message
       const li = document.createElement("li");
       li.classList.add("chat-bubble");
       li.classList.add(msg.sender === currentUser.name ? "outgoing" : "incoming");
 
-      // Message content
-      li.innerHTML = `<span>${msg.content}</span>
-                      <div class="bubble-footer">
-                        ${new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
-                        ${msg.isRead ? "✔✔" : "✔"}`;
-      // Add an Edit link if the message is sent by currentUser and is not read
+      li.innerHTML = `
+        <span>${msg.content}</span>
+        <div class="bubble-footer">
+          ${new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          ${msg.isRead ? "✔✔" : "✔"}
+        </div>
+      `;
+
+      // If message belongs to currentUser and is not read, show Edit
       if (msg.sender === currentUser.name && !msg.isRead) {
         const editLink = document.createElement("span");
         editLink.innerText = " Edit";
@@ -221,53 +227,49 @@
         editLink.onclick = () => editMessage(msg.id);
         li.querySelector(".bubble-footer").appendChild(editLink);
       }
-      li.querySelector(".bubble-footer").innerHTML += "</div>";
 
       chatList.appendChild(li);
     });
+
     // Auto scroll to bottom
     const chatMessages = document.getElementById("chat-messages");
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
-  // --- Send message functionality ---
+  // --- Send message ---
   document.getElementById("chat-form").addEventListener("submit", function(e) {
     e.preventDefault();
     const contentEl = document.getElementById("content");
     const text = contentEl.value.trim();
-    if (text === "") return;
-    const msg = {
-      id: Date.now(), // simple unique id
+    if (!text) return;
+
+    const newMsg = {
+      id: Date.now(),
       sender: currentUser.name,
       receiver: otherUser.name,
       content: text,
       sentAt: new Date(),
       isRead: false
     };
-    messages.push(msg);
+    messages.push(newMsg);
     contentEl.value = "";
     renderMessages();
   });
 
-  // --- Edit message functionality ---
-  // Allow editing a message if it is sent by currentUser and not yet read.
+  // --- Edit message ---
   function editMessage(messageId) {
-    // Find the message
     const msg = messages.find(m => m.id === messageId);
     if (!msg) return;
-    // Prompt the user for new content (or show an in-place edit form)
     const newContent = prompt("Edit your message:", msg.content);
     if (newContent !== null && newContent.trim() !== "") {
       msg.content = newContent.trim();
-      // Optionally, update a timestamp for edit (not shown in UI)
       msg.updatedAt = new Date();
       renderMessages();
     }
   }
 
-  // --- Simulate "read" functionality ---
-  // For demonstration, when the chat area is clicked, mark all messages
-  // received by currentUser as read.
+  // --- Simulate marking messages as read ---
+  // When the chat area is clicked, mark all messages received by currentUser as read.
   document.getElementById("chat-messages").addEventListener("click", () => {
     messages.forEach(msg => {
       if (msg.receiver === currentUser.name) {
