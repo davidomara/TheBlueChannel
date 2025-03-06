@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Management Subsystem</title>
+  <style>
+    /* Basic styling */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .kanban-board {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .kanban-column {
+      width: 300px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    .kanban-column h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .task-card {
+      background-color: #e2f7e1;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+    }
+
+    .task-card h3 {
+      margin: 0;
+      color: #333;
+    }
+
+    .task-card p {
+      margin: 5px 0;
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    .task-card .priority {
+      font-weight: bold;
+      color: #d32f2f;
+    }
+
+    .task-card .due-date {
+      font-size: 0.85rem;
+      color: #7b7b7b;
+    }
+
+    .task-form {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      width: 400px;
+      margin: 20px auto;
+    }
+
+    .task-form input,
+    .task-form select,
+    .task-form textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .task-form button {
+      width: 100%;
+      padding: 10px;
+      background-color: #09d261;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+
+    .task-form button:hover {
+      background-color: #07b457;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Task Management Subsystem</h1>
+
+  <div class="container">
+    <div class="kanban-board">
+      <!-- To Do Column -->
+      <div class="kanban-column" id="to-do">
+        <h2>To Do</h2>
+      </div>
+
+      <!-- In Progress Column -->
+      <div class="kanban-column" id="in-progress">
+        <h2>In Progress</h2>
+      </div>
+
+      <!-- Completed Column -->
+      <div class="kanban-column" id="completed">
+        <h2>Completed</h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Creation Form -->
+  <div class="task-form">
+    <h3>Create New Task</h3>
+    <form id="task-form">
+      <input type="text" id="task-title" placeholder="Task Title" required>
+      <textarea id="task-description" placeholder="Task Description" required></textarea>
+      <select id="task-assignee" required>
+        <option value="">Assign To</option>
+        <option value="John">John</option>
+        <option value="Jane">Jane</option>
+      </select>
+      <select id="task-priority" required>
+        <option value="">Select Priority</option>
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+      </select>
+      <input type="date" id="task-due-date" required>
+      <button type="submit">Create Task</button>
+    </form>
+  </div>
+
+  <script>
+    // Get references to elements
+    const taskForm = document.getElementById("task-form");
+    const taskTitle = document.getElementById("task-title");
+    const taskDescription = document.getElementById("task-description");
+    const taskAssignee = document.getElementById("task-assignee");
+    const taskPriority = document.getElementById("task-priority");
+    const taskDueDate = document.getElementById("task-due-date");
+
+    // Kanban columns
+    const toDoColumn = document.getElementById("to-do");
+    const inProgressColumn = document.getElementById("in-progress");
+    const completedColumn = document.getElementById("completed");
+
+    // Event listener for task form submission
+    taskForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      // Get the task data
+      const taskData = {
+        title: taskTitle.value,
+        description: taskDescription.value,
+        assignee: taskAssignee.value,
+        priority: taskPriority.value,
+        dueDate: taskDueDate.value
+      };
+
+      // Create a new task card
+      const taskCard = createTaskCard(taskData);
+
+      // Append task card to the "To Do" column
+      toDoColumn.appendChild(taskCard);
+
+      // Clear form inputs
+      taskForm.reset();
+    });
+
+    // Function to create a task card
+    function createTaskCard(taskData) {
+      const taskCard = document.createElement("div");
+      taskCard.classList.add("task-card");
+
+      taskCard.innerHTML = `
+        <h3>${taskData.title}</h3>
+        <p>${taskData.description}</p>
+        <p><strong>Assigned to:</strong> ${taskData.assignee}</p>
+        <p><span class="priority">${taskData.priority}</span></p>
+        <p class="due-date"><strong>Due Date:</strong> ${taskData.dueDate}</p>
+      `;
+
+      // Drag and Drop functionality
+      taskCard.setAttribute("draggable", true);
+      taskCard.addEventListener("dragstart", function(e) {
+        e.dataTransfer.setData("text", taskCard.innerHTML);
+        e.target.style.opacity = "0.5";
+      });
+      taskCard.addEventListener("dragend", function(e) {
+        e.target.style.opacity = "1";
+      });
+
+      return taskCard;
+    }
+
+    // Drag over columns to allow dropping
+    const columns = document.querySelectorAll(".kanban-column");
+
+    columns.forEach(column => {
+      column.addEventListener("dragover", function(e) {
+        e.preventDefault();
+      });
+
+      column.addEventListener("drop", function(e) {
+        e.preventDefault();
+        const taskData = e.dataTransfer.getData("text");
+        const taskCard = document.createElement("div");
+        taskCard.classList.add("task-card");
+        taskCard.innerHTML = taskData;
+        column.appendChild(taskCard);
+      });
+    });
+  </script>
+
+</body>
+</html>
