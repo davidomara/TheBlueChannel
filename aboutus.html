@@ -2,11 +2,326 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>About Us</title>
+  <title>MiniSheenasNest Chat</title>
+  <style>
+    /* Global resets */
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Navbar styles */
+    .navbar {
+      background-color: #333;
+      overflow: hidden;
+    }
+    .navbar a {
+      float: left;
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 20px;
+      text-decoration: none;
+    }
+    .navbar a:hover {
+      background-color: #ddd;
+      color: black;
+    }
+
+    /* Modal overlay for login */
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      width: 300px;
+    }
+    .modal-content input[type="text"] {
+      width: 90%;
+      padding: 10px;
+      font-size: 1rem;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .modal-content button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      background-color: #09d261;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .modal-content button:hover {
+      background-color: #07b457;
+    }
+    .modal-content p {
+      color: red;
+      display: none;
+      margin: 0;
+      font-size: 0.9rem;
+    }
+    
+    /* Chat container styles */
+    .chat-container {
+      width: 60%;
+      max-width: 800px;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background-color: #e5ddd5;
+      display: none; /* Hidden until login is valid */
+    }
+    /* Header with both users' info */
+    .chat-header {
+      background-color: #075E54;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-info img {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #09d261;
+    }
+    .user-info h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+    /* Messages area */
+    .chat-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background-color: rgba(229, 221, 213, 0.8);
+    }
+    .chat-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .chat-bubble {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 12px;
+      margin: 6px 0;
+      clear: both;
+      max-width: 70%;
+      font-size: 0.95rem;
+      line-height: 1.3;
+      position: relative;
+    }
+    .outgoing {
+      background-color: #dcf8c6;
+      float: right;
+      text-align: left;
+    }
+    .incoming {
+      background-color: #fff;
+      float: left;
+    }
+    .bubble-footer {
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 4px;
+      text-align: right;
+    }
+    /* Input area */
+    .chat-input-area {
+      background: #f0f0f0;
+      padding: 10px;
+      border-top: 1px solid #ccc;
+    }
+    .chat-form {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .chat-form textarea {
+      flex: 1;
+      min-height: 40px;
+      resize: none;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 0.95rem;
+      min-width: 0;
+    }
+    .chat-form button {
+      width: 80px;
+      height: 40px;
+      background-color: #09d261;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .chat-form button:hover {
+      background-color: #07b457;
+    }
+    .chat-list::after {
+      content: "";
+      display: block;
+      clear: both;
+    }
+  </style>
 </head>
 <body>
-  <h1>About Us</h1>
-  <p>Welcome to the About Us page!</p>
-  <p>MiniSheenasNest Chat is a platform designed to connect users through a simple and intuitive messaging system.</p>
+
+<!-- Navbar -->
+<div class="navbar">
+  <a href="index.html">Home</a>
+  <a href="aboutus.html">About Us</a>
+</div>
+
+<!-- Login Modal -->
+<div id="login-modal" class="modal">
+  <div class="modal-content">
+    <h2>What's your name?</h2>
+    <input type="text" id="user-name-input" placeholder="Enter Sheena or Nord">
+    <br>
+    <button id="login-button">Login</button>
+    <p id="login-error">Invalid name. Only "Sheena" or "Nord" allowed.</p>
+  </div>
+</div>
+
+<!-- Chat Container -->
+<div id="chat-container" class="chat-container">
+  <div class="chat-header">
+    <div class="user-info" id="current-user-info">
+      <img id="current-user-img" src="" alt="">
+      <h2 id="current-user-name"></h2>
+    </div>
+    <div class="user-info" id="other-user-info">
+      <img id="other-user-img" src="" alt="">
+      <h2 id="other-user-name"></h2>
+    </div>
+  </div>
+  <div class="chat-messages" id="chat-messages">
+    <ul class="chat-list" id="chat-list">
+      <!-- Chat messages will be rendered here -->
+    </ul>
+  </div>
+  <div class="chat-input-area">
+    <form id="chat-form" class="chat-form">
+      <textarea id="content" placeholder="Type your message..."></textarea>
+      <button type="submit">Send</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Define allowed users
+  const users = {
+    Sheena: { name: "Sheena", img: "images/sheena.jpg" },
+    Nord: { name: "Nord", img: "images/nord.jpg" }
+  };
+
+  let currentUser, otherUser;
+  let messages = [];
+
+  // Login handling
+  document.getElementById("login-button").addEventListener("click", function() {
+    const inputName = document.getElementById("user-name-input").value.trim().toLowerCase();
+    const errorEl = document.getElementById("login-error");
+    errorEl.style.display = "none";
+    
+    if (inputName === "sheena") {
+      currentUser = users.Sheena;
+      otherUser = users.Nord;
+      initChat();
+    } else if (inputName === "nord") {
+      currentUser = users.Nord;
+      otherUser = users.Sheena;
+      initChat();
+    } else {
+      errorEl.style.display = "block";
+    }
+  });
+
+  // Initialize chat UI after successful login
+  function initChat() {
+    // Set header images and names
+    document.getElementById("current-user-img").src = currentUser.img;
+    document.getElementById("current-user-img").alt = currentUser.name;
+    document.getElementById("current-user-name").innerText = currentUser.name;
+    document.getElementById("other-user-img").src = otherUser.img;
+    document.getElementById("other-user-img").alt = otherUser.name;
+    document.getElementById("other-user-name").innerText = otherUser.name;
+    
+    // Hide login modal, show chat container
+    document.getElementById("login-modal").style.display = "none";
+    document.getElementById("chat-container").style.display = "flex";
+    renderMessages();
+  }
+
+  // Render messages
+  function renderMessages() {
+    const chatList = document.getElementById("chat-list");
+    chatList.innerHTML = "";
+    messages.forEach(msg => {
+      const li = document.createElement("li");
+      li.classList.add("chat-bubble");
+      li.classList.add(msg.sender === currentUser.name ? "outgoing" : "incoming");
+      li.innerHTML = `<span>${msg.content}</span>
+                      <div class="bubble-footer">
+                        ${new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
+                        ${msg.isRead ? "✔✔" : "✔"}
+                      </div>`;
+      chatList.appendChild(li);
+    });
+    const chatMessages = document.getElementById("chat-messages");
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  // Send message
+  document.getElementById("chat-form").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const contentEl = document.getElementById("content");
+    const text = contentEl.value.trim();
+    if (text === "") return;
+    const newMsg = {
+      id: Date.now(),
+      sender: currentUser.name,
+      receiver: otherUser.name,
+      content: text,
+      sentAt: new Date(),
+      isRead: false
+    };
+    messages.push(newMsg);
+    contentEl.value = "";
+    renderMessages();
+  });
+</script>
+
 </body>
 </html>
