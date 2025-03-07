@@ -4,6 +4,76 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Task Management Subsystem</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .navbar {
+      background: #333;
+      padding: 10px;
+      text-align: center;
+    }
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      padding: 14px 20px;
+      display: inline-block;
+    }
+    .navbar a:hover {
+      background: #575757;
+    }
+    .container {
+      padding: 20px;
+      text-align: center;
+    }
+    .kanban-board {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+    .kanban-column {
+      width: 30%;
+      background: white;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0px 0px 5px gray;
+      min-height: 300px;
+    }
+    .task-card {
+      background: #e3e3e3;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      cursor: grab;
+    }
+    .task-form {
+      background: white;
+      padding: 20px;
+      margin: 20px auto;
+      width: 50%;
+      border-radius: 5px;
+      box-shadow: 0px 0px 5px gray;
+    }
+    input, textarea, select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #333;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #575757;
+    }
+  </style>
   <script type="module">
     // Firebase imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
@@ -23,19 +93,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Get references to form elements
-    const taskForm = document.getElementById("task-form");
-    const taskTitle = document.getElementById("task-title");
-    const taskDescription = document.getElementById("task-description");
-    const taskAssignee = document.getElementById("task-assignee");
-    const taskPriority = document.getElementById("task-priority");
-    const taskDueDate = document.getElementById("task-due-date");
-
-    // Kanban columns
-    const toDoColumn = document.getElementById("to-do");
-    const inProgressColumn = document.getElementById("in-progress");
-    const completedColumn = document.getElementById("completed");
-
     // Fetch and display tasks from Firestore
     async function loadTasks() {
       const querySnapshot = await getDocs(collection(db, "tasks"));
@@ -45,29 +102,6 @@
         document.getElementById(taskData.status).appendChild(taskCard);
       });
     }
-
-    // Add new task to Firestore
-    taskForm.addEventListener("submit", async function(e) {
-      e.preventDefault();
-
-      // Task object
-      const taskData = {
-        title: taskTitle.value,
-        description: taskDescription.value,
-        assignee: taskAssignee.value,
-        priority: taskPriority.value,
-        dueDate: taskDueDate.value,
-        status: "to-do"
-      };
-
-      // Save to Firestore
-      const docRef = await addDoc(collection(db, "tasks"), taskData);
-      const taskCard = createTaskCard(taskData, docRef.id);
-      toDoColumn.appendChild(taskCard);
-
-      // Clear form
-      taskForm.reset();
-    });
 
     // Function to create a task card
     function createTaskCard(taskData, taskId) {
@@ -93,9 +127,7 @@
     }
 
     // Enable drag and drop functionality
-    const columns = document.querySelectorAll(".kanban-column");
-
-    columns.forEach(column => {
+    document.querySelectorAll(".kanban-column").forEach(column => {
       column.addEventListener("dragover", function(e) {
         e.preventDefault();
       });
@@ -123,7 +155,7 @@
     <a href="aboutus.html">About Us</a>
   </div>
 
-  <h1>Task Management Subsystem</h1>
+  <h1 class="container">Task Management Subsystem</h1>
 
   <div class="container">
     <div class="kanban-board">
