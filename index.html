@@ -363,13 +363,19 @@
     messages.forEach(msg => {
       const li = document.createElement("li");
       const messageBubble = document.createElement("div");
-      messageBubble.classList.add("chat-bubble", msg.sender === currentUser.name ? "outgoing" : "incoming");
-      messageBubble.textContent = msg.content;
+      messageBubble.className = "chat-bubble";
+      if (msg.sender === currentUser.name) {
+        messageBubble.classList.add("outgoing");
+      } else {
+        messageBubble.classList.add("incoming");
+      }
+      messageBubble.innerHTML = `${msg.content}<div class="bubble-footer">${currentUser.name}</div>`;
       li.appendChild(messageBubble);
       chatList.appendChild(li);
     });
+
+    chatList.scrollTop = chatList.scrollHeight; // Auto-scroll to the bottom
   }
 </script>
-
 </body>
 </html>
