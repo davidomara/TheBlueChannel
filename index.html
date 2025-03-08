@@ -1,381 +1,138 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>MiniSheenasNest Chat</title>
-  <style>
-    /* Global resets */
-    body, html {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f9;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
-    /* Navbar styles */
-    .navbar {
-      background-color: #333;
-      padding: 14px 20px;
-      text-align: center;
-    }
-    .navbar a {
-      color: white;
-      padding: 14px 20px;
-      text-decoration: none;
-      font-size: 1.2rem;
-      margin: 0 10px;
-      border-radius: 5px;
-      transition: background-color 0.3s ease;
-    }
+        const firebaseConfig = {
+          apiKey: "AIzaSyB6tDk5iNJNBkBRVqwPMBTrCm6o74Wd7mc",
+          authDomain: "thenordschannel.firebaseapp.com",
+          projectId: "thenordschannel",
+          storageBucket: "thenordschannel.firebasestorage.app",
+          messagingSenderId: "924322422013",
+          appId: "1:924322422013:web:51cf72f375e18376c7b294"
 
-    .navbar a:hover {
-      background-color: #575757;
-    }
+        };
 
-    /* Modal overlay for login */
-    .modal {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-    .modal-content {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      text-align: center;
-      width: 300px;
-    }
-    .modal-content input[type="text"] {
-      width: 90%;
-      padding: 10px;
-      font-size: 1rem;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .modal-content button {
-      padding: 10px 20px;
-      font-size: 1rem;
-      background-color: #09d261;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .modal-content button:hover {
-      background-color: #07b457;
-    }
-    .modal-content p {
-      color: red;
-      display: none;
-      margin: 0;
-      font-size: 0.9rem;
-    }
-    
-    /* Chat container styles */
-    .chat-container {
-      width: 60%;
-      max-width: 800px;
-      margin: 20px auto;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      height: 80vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      background-color: #e5ddd5;
-      display: none; /* Hidden until login is valid */
-    }
-    /* Header with both users' info */
-    .chat-header {
-      background-color: #075E54;
-      color: #fff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px;
-    }
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .user-info img {
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #09d261;
-    }
-    .user-info h2 {
-      margin: 0;
-      font-size: 1.2rem;
-    }
-    /* Messages area */
-    .chat-messages {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-      background-color: rgba(229, 221, 213, 0.8);
-    }
-    .chat-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-    .chat-bubble {
-      display: inline-block;
-      padding: 8px 12px;
-      border-radius: 12px;
-      margin: 6px 0;
-      clear: both;
-      max-width: 70%;
-      font-size: 0.95rem;
-      line-height: 1.3;
-      position: relative;
-    }
-    .outgoing {
-      background-color: #dcf8c6;
-      float: right;
-      text-align: left;
-    }
-    .incoming {
-      background-color: #fff;
-      float: left;
-    }
-    .bubble-footer {
-      font-size: 0.75rem;
-      color: #888;
-      margin-top: 4px;
-      text-align: right;
-    }
-    /* Input area */
-    .chat-input-area {
-      background: #f0f0f0;
-      padding: 10px;
-      border-top: 1px solid #ccc;
-    }
-    .chat-form {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .chat-form textarea {
-      flex: 1;
-      min-height: 40px;
-      resize: none;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 8px;
-      font-size: 0.95rem;
-      min-width: 0;
-    }
-    .chat-form button {
-      width: 80px;
-      height: 40px;
-      background-color: #09d261;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .chat-form button:hover {
-      background-color: #07b457;
-    }
-    .chat-list::after {
-      content: "";
-      display: block;
-      clear: both;
-    }
-  </style>
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentUser, otherUser;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const loginButton = document.getElementById("login-button");
+            const loginModal = document.getElementById("login-modal");
+            const chatContainer = document.getElementById("chat-container");
+
+            if (!loginButton || !loginModal || !chatContainer) {
+                console.error("Missing essential elements in the HTML.");
+                return;
+            }
+
+            loginButton.addEventListener("click", async function() {
+                const inputName = document.getElementById("user-name-input").value.trim().toLowerCase();
+                if (inputName === "sheena") {
+                    currentUser = { name: "Sheena", img: "/images/sheena.jpg" };
+                    otherUser = { name: "Nord", img: "/images/nord.jpg" };
+                } else if (inputName === "nord") {
+                    currentUser = { name: "Nord", img: "/images/nord.jpg" };
+                    otherUser = { name: "Sheena", img: "/images/sheena.jpg" };
+                } else {
+                    document.getElementById("login-error").style.display = "block";
+                    return;
+                }
+                initChat();
+            });
+
+            function initChat() {
+                chatContainer.style.display = "flex";
+                loginModal.style.display = "none";
+                loadMessages();
+            }
+
+            function loadMessages() {
+                const chatList = document.getElementById("chat-list");
+                if (!chatList) {
+                    console.error("chat-list element not found.");
+                    return;
+                }
+
+                chatList.innerHTML = "";
+                const q = query(collection(db, "messages"), orderBy("sentAt"));
+                onSnapshot(q, (snapshot) => {
+                    chatList.innerHTML = "";
+                    snapshot.forEach((doc) => {
+                        const msg = doc.data();
+                        const li = document.createElement("li");
+                        li.classList.add("chat-bubble", msg.sender === currentUser.name ? "outgoing" : "incoming");
+                        li.innerHTML = `<span>${msg.content}</span>
+                            <div class="bubble-footer">
+                                ${new Date(msg.sentAt?.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
+                                ${msg.isRead ? "✔✔" : "✔"}
+                            </div>`;
+                        chatList.appendChild(li);
+                    });
+                    document.getElementById("chat-messages").scrollTop = chatList.scrollHeight;
+                });
+            }
+
+            document.getElementById("chat-form").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const contentEl = document.getElementById("content");
+                if (!contentEl) {
+                    console.error("Message input field not found.");
+                    return;
+                }
+
+                const text = contentEl.value.trim();
+                if (!text) return;
+                await addDoc(collection(db, "messages"), {
+                    sender: currentUser.name,
+                    receiver: otherUser.name,
+                    content: text,
+                    sentAt: serverTimestamp(),
+                    isRead: false
+                });
+                contentEl.value = "";
+            });
+        });
+    </script>
 </head>
 <body>
-
-<!-- Navbar -->
-<div class="navbar">
-  <a href="index.html">Home</a>
-  <a href="index.html">Chat</a>
-  <a href="taskmanager.html">Task Manager</a>
-  <a href="aboutus.html">About Us</a>
-</div>
-
-<!-- Login Modal -->
-<div id="login-modal" class="modal">
-  <div class="modal-content">
-    <h2>What's your name?</h2>
-    <input type="text" id="user-name-input" placeholder="Enter Sheena or Nord">
-    <br>
-    <button id="login-button">Login</button>
-    <p id="login-error">Invalid name. Only "Sheena" or "Nord" allowed.</p>
-  </div>
-</div>
-
-<!-- Chat Container -->
-<div id="chat-container" class="chat-container">
-  <div class="chat-header">
-    <div class="user-info" id="other-user-info">
-      <img id="other-user-img" src="" alt="">
-      <h2 id="other-user-name"></h2>
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h2>What's your name?</h2>
+            <input type="text" id="user-name-input" placeholder="Enter Sheena or Nord">
+            <button id="login-button">Login</button>
+            <p id="login-error" style="display: none; color: red;">Invalid username</p>
+        </div>
     </div>
-    <div class="user-info" id="current-user-info">
-      <img id="current-user-img" src="" alt="">
-      <h2 id="current-user-name"></h2>
+
+    <div id="chat-container" class="chat-container" style="display: none;">
+        <div class="chat-header">
+            <div class="user-info" id="current-user-info">
+                <img id="current-user-img" src="" alt="">
+                <h2 id="current-user-name"></h2>
+            </div>
+            <div class="user-info" id="other-user-info">
+                <img id="other-user-img" src="" alt="">
+                <h2 id="other-user-name"></h2>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <ul class="chat-list" id="chat-list"></ul>
+        </div>
+        <div class="chat-input-area">
+            <form id="chat-form">
+                <textarea id="content" placeholder="Type your message..."></textarea>
+                <button type="submit">Send</button>
+            </form>
+        </div>
     </div>
-  </div>
-  <div class="chat-messages" id="chat-messages">
-    <ul class="chat-list" id="chat-list">
-      <!-- Chat messages will be rendered here -->
-    </ul>
-  </div>
-  <div class="chat-input-area">
-    <form id="chat-form" class="chat-form">
-      <textarea id="content" placeholder="Type your message..."></textarea>
-      <button type="submit">Send</button>
-    </form>
-  </div>
-</div>
-
-<!-- Firebase Configuration -->
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
-
-  // Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyB6tDk5iNJNBkBRVqwPMBTrCm6o74Wd7mc",
-    authDomain: "thenordschannel.firebaseapp.com",
-    projectId: "thenordschannel",
-    storageBucket: "thenordschannel.firebasestorage.app",
-    messagingSenderId: "924322422013",
-    appId: "1:924322422013:web:51cf72f375e18376c7b294"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
-
-  // Example: Listen for authentication state changes
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      console.log('User signed in:', user);
-    } else {
-      console.log('No user signed in');
-    }
-  });
-
-  // Example: Save a message to Firestore
-  async function saveMessage(content, sender, receiver) {
-    try {
-      await addDoc(collection(db, "messages"), {
-        content: content,
-        sender: sender,
-        receiver: receiver,
-        timestamp: serverTimestamp()
-      });
-      console.log('Message saved to Firestore');
-    } catch (e) {
-      console.error("Error adding document: ", e);
-    }
-  }
-</script>
-
-<script>
-  // Define allowed users
-  const users = {
-    Sheena: { name: "Sheena", img: "images/sheena.jpg" },
-    Nord: { name: "Nord", img: "images/nord.jpg" }
-  };
-
-  let currentUser, otherUser;
-  let messages = [];
-
-  // Login handling
-  document.getElementById("login-button").addEventListener("click", function() {
-    const inputName = document.getElementById("user-name-input").value.trim().toLowerCase();
-    const errorEl = document.getElementById("login-error");
-    errorEl.style.display = "none";
-    
-    if (inputName === "sheena") {
-      currentUser = users.Sheena;
-      otherUser = users.Nord;
-      initChat();
-    } else if (inputName === "nord") {
-      currentUser = users.Nord;
-      otherUser = users.Sheena;
-      initChat();
-    } else {
-      errorEl.style.display = "block";
-    }
-  });
-
-  // Initialize chat UI after successful login
-  function initChat() {
-    // Set header images and names
-    document.getElementById("current-user-img").src = currentUser.img;
-    document.getElementById("current-user-name").textContent = currentUser.name;
-    document.getElementById("other-user-img").src = otherUser.img;
-    document.getElementById("other-user-name").textContent = otherUser.name;
-    
-    // Hide login modal and show chat container
-    document.getElementById("login-modal").style.display = "none";
-    document.getElementById("chat-container").style.display = "block";
-    
-    // Listen for form submit
-    document.getElementById("chat-form").addEventListener("submit", sendMessage);
-  }
-
-  // Send message function
-  async function sendMessage(event) {
-    event.preventDefault();
-    
-    const content = document.getElementById("content").value.trim();
-    if (content === "") return;
-
-    // Save message to Firestore
-    await saveMessage(content, currentUser.name, otherUser.name);
-    // Add message to chat history
-    messages.push({ sender: currentUser.name, content });
-    
-    // Update chat list UI
-    renderChatMessages();
-    
-    // Clear the message input
-    document.getElementById("content").value = "";
-  }
-
-  // Render messages in chat container
-  function renderChatMessages() {
-    const chatList = document.getElementById("chat-list");
-    chatList.innerHTML = "";
-    
-    messages.forEach(msg => {
-      const li = document.createElement("li");
-      const messageBubble = document.createElement("div");
-      messageBubble.className = "chat-bubble";
-      if (msg.sender === currentUser.name) {
-        messageBubble.classList.add("outgoing");
-      } else {
-        messageBubble.classList.add("incoming");
-      }
-      messageBubble.innerHTML = `${msg.content}<div class="bubble-footer">${currentUser.name}</div>`;
-      li.appendChild(messageBubble);
-      chatList.appendChild(li);
-    });
-
-    chatList.scrollTop = chatList.scrollHeight; // Auto-scroll to the bottom
-  }
-</script>
 </body>
 </html>
